@@ -1,0 +1,680 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "02c2cd0a",
+   "metadata": {},
+   "source": [
+    "### Group 37-\n",
+    "\n",
+    "1. BANDHAKAVI LAKSHMI MANI SUNDER (2022AC05010)\n",
+    "2. ABHINAV SRIVASTAVA\n",
+    "3. MAUSAM KUMAR SUMAN\n",
+    "4. ANIL KUMAR SRIRAMU\n",
+    "5. CHAUHAN AVINASHSINGH"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8068857e",
+   "metadata": {},
+   "source": [
+    "# Part A: Data set Description"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "109b8be3",
+   "metadata": {},
+   "source": [
+    "#### - The dataset consists of `38` documents related to `MSMED(Micro, Small and Medium Enterprises Development)`judgments in India. These documents are in PDF format taken from https://judgments.ecourts.gov.in/\n",
+    "\n",
+    "#### - They have been collected to demonstrate the construction and utility of an inverted index in the legal domain, specifically for MSMED cases."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "461fdbd3",
+   "metadata": {},
+   "source": [
+    "## I. Pip installing required libraries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "c9dc84cd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#pip install PyPDF2\n",
+    "#pip install pdfplumber\n",
+    "# pip install nltk"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f3230d9a",
+   "metadata": {},
+   "source": [
+    "## II. Importing Libraries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "e15f26b6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import PyPDF2\n",
+    "import os\n",
+    "import nltk\n",
+    "from nltk.tokenize import word_tokenize\n",
+    "from nltk.stem import PorterStemmer\n",
+    "from nltk.corpus import stopwords\n",
+    "import string"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e9745b3f",
+   "metadata": {},
+   "source": [
+    "## III. Function to extract the text from all the documents into our code \n",
+    "`extract_text_from_pdf()`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "e0393416",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def extract_text_from_pdf(pdf_path):\n",
+    "    try:\n",
+    "        with open(pdf_path, 'rb') as file:\n",
+    "            reader = PyPDF2.PdfReader(file)\n",
+    "            text = \"\"\n",
+    "            for page_num in range(len(reader.pages)):\n",
+    "                text += reader.pages[page_num].extract_text()\n",
+    "            return text\n",
+    "    except Exception as e:\n",
+    "        print(f\"Error reading {pdf_path}: {e}\")\n",
+    "        return None\n",
+    "\n",
+    "folder_path = '/Users/maniveena/Desktop/DEGREES & CERTS/MTECH/AI-ML/SEM-2/INFO RETRIEVAL/Assignment 1/Corpus'\n",
+    "corpus_texts = []\n",
+    "processed_files = 0"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "3242b0d2",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Overwriting cache for 0 281\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Processed 38 files. Total texts in corpus: 38\n"
+     ]
+    }
+   ],
+   "source": [
+    "for filename in os.listdir(folder_path):\n",
+    "    if filename.lower().endswith('.pdf'): # Check for both .pdf and .PDF\n",
+    "        file_path = os.path.join(folder_path, filename)\n",
+    "        text = extract_text_from_pdf(file_path)\n",
+    "        if text is not None:\n",
+    "            corpus_texts.append(text)\n",
+    "            processed_files += 1\n",
+    "        else:\n",
+    "            print(f\"Skipped or failed to read: {filename}\")\n",
+    "\n",
+    "print(f\"Processed {processed_files} files. Total texts in corpus: {len(corpus_texts)}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "be6e71af",
+   "metadata": {},
+   "source": [
+    "#### Validation:\n",
+    "    We do have 38 pdfs in our corpus and all of them are being read into the corpus_texts list that we created.\n",
+    "    This validates that none of our corpus documents are missed.\n",
+    "    "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "005ff451",
+   "metadata": {},
+   "source": [
+    "### Looking at the extracted text"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "54925051",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'Gujarat High Court\\nJmc vs Mechtech on 10 January, 2011\\nAuthor: Akil Kureshi,&Nbsp;\\n   Gujarat High Court Case Information System \\n                   Print\\nSCA/14629/2010   22/ 22 ORDER \\nIN\\nTHE HIGH COURT OF GUJARAT AT AHMEDABADJmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 1SPECIAL\\nCIVIL APPLICATION No. 14629 of 2010\\nFor\\nApproval and Signature:  \\nHONOURABLE\\nMR.JUSTICE AKIL KURESHI\\n=========================================================\\n1\\nWhether\\n                        Reporters of Local Papers may be allowed to see the judgment ?\\n2\\nTo be\\n                        referred to the Reporter or not ?Jmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 23\\nWhether\\n                        their Lordships wish to see the fair copy of the judgment ?\\n4\\nWhether\\n                        this case involves a substantial question of law as to the\\n                        interpretation of the constitution of India, 1950 or any order\\n                        made thereunder ?\\n5\\nWhether\\n                        it is to be circulated to the civil judge ?Jmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 3=========================================================\\nJMC\\nPROJECTS (INDIA) LTD & 1 - Petitioner(s)\\nVersus\\nMECHTECH\\nENGINERS & 1 - Respondent(s)\\n=========================================================\\nAppearance\\n: \\nMR\\nPARESH M DAVE for\\nPetitioner(s) : 1 - 2. \\nNOTICE SERVED for Respondent(s) :  2. \\nMR\\nBS PATEL for Respondent(s) :\\n1, \\n=========================================================\\nCORAM\\n                        : \\nHONOURABLE\\n                        MR.JUSTICE AKIL KURESHIJmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 4Date\\n:    10/01/2011 \\nCAV\\nORDER \\n1. Petitioner No.1 is a Company registered under the Companies Act. Petitioner No.2 is its Assistant\\nVice-President. In the present petition, the petitioners have challenged an order dated 21.10.10,\\npassed by learned Additional District Judge, Ahmedabad Rural below Application Ex.10 in Civil\\nMisc. Application No.31/10 by which the learned Judge directed the petitioners to deposit 75% of\\nRs.48,64,782/- awarded by the Arbitrator in favour of the respondents within one month from the\\ndate of the order further providing that failure to comply with the said direction will result into\\nautomatic dismissal of the application of the petitioners under section 34 of the Arbitration and\\nConciliation Act, 1996.\\n2. Petition arises in following factual background:\\n2.1 Petitioner No.1 is a company engaged in the business of construction and civil engineering\\nworks. Petitioner No.1 Company was awarded rehabilitation and construction work of road project\\nby the Madhya Pradesh Road Development Corporation for which the petitioners required crushing\\nplant with a capacity of 200 tonnes per hour. Order for setting up such a plant called Skid Mounted\\n200 TPH Crushing Machine was placed by the petitioners with respondent No.1 company by\\npurchase order dated 21.2.2006.\\n2.2 With respect to execution of the said contract, disputes arose between the parties. It is the case\\nof the petitioners that respondent No.1 did not perform its duties under the contract and never set\\nup the plant as per the specifications with satisfactory performance. Respondents however deny\\nsuch contentions. To resolve the issues through arbitration as contained in the arbitration clause in\\nthe agreement between the parties, the petitioners issued notice dated 11th January 2008 conveying\\nthe respondents that the petitioners are invoking arbitration clause and calling upon the\\nrespondents to resort to arbitration to settle the disputes in terms of the purchase order. Petitioners\\'\\nnotice dated 11.1.2008 was replied to by the respondents vide communication dated 28.4.2008\\ndenying the allegations and asserting that in fact, the petitioners are liable to pay certain amounts to\\nthe respondents.\\n2.3 In the meantime, the petitioners proceeded further and appointed one Shri A.B.Desai as Sole\\nArbitrator to adjudicate the disputes and conveyed the said decision to the respondents under letter\\ndated 17th March 2008.Jmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 52.4 Arbitrator Shri A.B.Desai rendered his award dated 15.12.2009 and held that petitioner No.1\\ncompany is liable to pay Rs.48,64,782/- to respondent No.1 Company along with interest at the rate\\nof 10% per annum. Though subsequently, the Arbitrator under its communication dated 29th\\nDecember 2009, ordered certain corrections to be made in his previously declared award, the\\neffective direction for payment of Rs.48,64,782/- with interest remain unchanged.\\n2.5 The petitioners aggrieved by the said award approached the learned Additional District Judge,\\nAhmedabad Rural for setting aside the same under section 34 of the Arbitration and Conciliation\\nAct by filing Civil Misc. Application No.31/2010.\\n2.6 The respondents in the said Civil Misc. Application No.31/2010, filed application Ex.10 and\\ncontended that the petitioners herein are required to deposit the awarded amount as per the Micro,\\nSmall and Medium Enterprises Development Act, 2006 (hereinafter to be referred to as \\'the Act of\\n2006\\') and since such amount is not deposited, the application challenging the award under section\\n34 of the Arbitration and Conciliation Act, 1996 is not maintainable. They, therefore, prayed that the\\nsaid Civil Misc. Application be rejected.\\n2.7 Petitioner No.1 filed its reply to such application Ex.10 contending that there is no obligation to\\nmake pre-deposit under the Act of 2006 since the proceedings are instituted for setting aside the\\narbitration award under section 34 of the Arbitration and Conciliation Act. It was further contended\\nthat section 19 of the Act of 2006 requiring the deposit of 75% of the awarded amount cannot be\\nmade applicable to proceedings arising under the Arbitration and Conciliation Act, 1996.\\n2.8 The learned Additional District Judge, Ahmedabad Rural however, by his impugned order dated\\n21st October 2010 held that the petitioners are liable to deposit 75% of the awarded amount under\\nsection 19 of the Act of 2006. They were, therefore, directed to deposit such amount within one\\nmonth from the date of the order failing which, it was provided that their application under section\\n34 of the Arbitration and Conciliation Act would stand automatically dismissed.\\n3. It is this order dated 21st October 2010 passed by the learned Additional District Judge,\\nAhmedabad (Rural), which is under challenge in the present petition.\\n4. Appearing for the petitioners, learned counsel Shri Paresh Dave referring to the provisions of the\\nAct of 2006 and in particular section 19 thereof, contended that requirement of pre-deposit under\\nsection 19 would not apply to the proceedings under the Arbitration and Conciliation Act. He\\nsubmitted that admittedly, the award was not passed by the Micro and Small Enterprises\\nFacilitation Council (hereinafter to be referred to as \\'the Council\\') constituted under the Act of 2006,\\nbut by an Arbitrator appointed under the terms of the arbitration clause between the parties under\\nthe Arbitration and Conciliation Act, 1996. He further contended that the petitioners dispute that\\nrespondent No.1 is a micro and small enterprise. No direction for pre-deposit under section 19 of the\\nAct of 2006, therefore, could have been issued.\\n5. On the other hand, learned counsel Shri B.S.Patel appearing for the respondents opposed the\\npetition contending that requirement of pre-deposit under section of the Act of 2006 would applyJmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 6not only in case of award passed by the Council, but in all cases where for order for payment of any\\namount made in favour of a supplier is under challenge. He invited my attention to the provisions of\\nthe Interest on Delayed Payment to Small Scale and Ancillary Industrial Undertakings Act, 1993\\n(hereinafter to be referred to as \"the Act of 1993\") which contained similar requirement of\\npre-deposit and which Act has been repealed by the Act of 2006. He relied on the decision of the\\nApex Court in the case of Snehadeep Strucgtures Pvt. Ltd v. MSSIDCL, 2010(2) Arb. LR 20 wherein\\nthe provisions of the Act of 1993 and the Act of 2006 came up for consideration before the Apex\\nCourt.\\n6. Having thus heard the learned counsel appearing for the parties and having perused the record,\\nbefore adverting to the central issue of applicability of section 19 of the Act of 2006, in the present\\ncase, one objection of the petitioners to the maintainability of the application Ex.10 filed by the\\nrespondents before the Court below need to be addressed.\\n7. As recorded earlier, on behalf of the petitioners, it was contended that respondent No.1 Company\\nis not a micro or small enterprises as defined under the Act of 2006. Such a contention was taken\\nthrough oral submissions made before me. Ground in this respect has also been raised in the\\npetition in the following manner :\\n\"(iii) The provisions of the Act of 2006 were even otherwise not applicable nor attracted in the\\npresent case inasmuch as the present case involved the claims made by the petitioner company\\nwhich is admittedly not micro or small or medium enterprise as contemplated under the Act of\\n2006; and therefore, the petitioner\\'s claims could never have been referred to the Council under\\nSection 18 of the Act of 2006. Whether respondent no.1 is a micro or a small or a medium enterprise\\nor not is also a matter not established in the proceedings before respondent No.2 herein; or\\notherwise. The very fact that respondent no.1 lodged their claims before the Arbitrator and not by\\nway of any reference to the Council under section 18 of the Act of 2006 also shows that respondent\\nno.1 could not have been an enterprise to which the provisions of the Act 2006 were applicable.\"\\nBefore the learned Additional District Judge, however, no such contention was taken. Respondent\\nNo.1 in the application Ex.10, in the first paragraph has stated as under:\\n\"1.\\nThe Opponent No.1 submits that they are registered under the Micro, Small & Medium Enterprises\\nDevelopment Act, 2006 and the copy of the certificate of registration is attached herewith.\"\\nThese unambiguous assertions contained in application Ex.10 were not denied in the reply filed on\\nbehalf of petitioner No.1 Company. I have perused the reply. There is no denial to the averments of\\nrespondent No.1 that it is registered under the Act of 2006. It is not stated that respondent No.1 is\\nnot a micro or small enterprise. It is not contended that because of that, the Act of 2006 or\\nrequirements of section 19 thereof are not applicable. In fact, the main, perhaps the sole ground,\\nraised in the written reply was that the award under challenge is passed by the Sole Arbitrator and\\nthe proceedings are therefore instituted under section 34 of the Arbitration and Conciliation ActJmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 71996. The requirement of pre-deposit under section 19 of the Act of 2006 would therefore not apply.\\nUpon perusal of the impugned order passed by the learned Judge also, no argument appears to have\\nbeen advanced even orally before the said court. In view of the above, the objection of the petitioners\\nthat respondent No.1 not being a micro or small enterprise as specified in the Act of 2006 cannot\\nstake the benefit under section 19 of the Act of 2006 is turned down since no such dispute was\\nraised before the court below.\\n8. This brings me to the central question, namely, whether in the facts of the present case,\\nrequirement of pre-deposit contained in section 19 of the Act of 2006 would apply. Precise\\ncontention of the petitioners is that such a requirement would arise only in case where any decree,\\naward or order has been made either by the Council or by any institution or center to which a\\nreference has been made by the Council. In the present case, the award was passed neither by the\\nCouncil nor on a reference made by the Council. On the other hand, case of the respondents is that\\nsection 19 of the Act of 2006 would cover not only any decree, award or order passed by the Council\\nor on a reference made by the Council, but any decree, award or order passed by any court,\\ninstitution or authority. In order to to analyse the provisions contained in section 19 of the Act of\\n2006, certain statutory provisions need to be noted.\\n9. The Act of 1993 was framed \"to provide for and regulate the payment of interest on delayed\\npayments to small scale and ancillary industrial undertaking and for matters connected therewith or\\nincidental thereto\". Statement of objects and reasons for enactment of the Act of 1993 records that it\\nwas felt that prompt payments of money by buyers should be statutorily ensured and mandatory\\nprovisions for payment of interest on the outstanding money, in case of default, should be made. It\\nwas felt that the buyers, if required under law to pay interest, would refrain from withholding\\npayments to small scale and ancillary industrial undertakings. With these objects in mind, the Act of\\n1993 was enacted. The Act of 1993 was further amended by the Amendment Act 23 of 1998 with the\\nobject of making the Act more effective for ensuring timely payments to small scale and ancillary\\nindustrial undertakings. Section 3 of the Act of 1993 provides for liability of buyer to make payment\\nto the supplier (that is an ancillary industrial undertaking or a small scale industrial undertaking\\nholding a permanent registration certificate under the Act) of any goods or services within certain\\ntime period. Section 4 provided that if no such payment is made within the time specified under\\nsection 3, notwithstanding anything contained in any agreement between the buyer and the supplier\\nor in any law for the time being in force, the buyer shall be liable to pay interest to the supplier at\\none and a half time of Prime Lending Rate charged by the State Bank of India. Section 5 of the Act of\\n1993 provided that such interest shall be compound interest (with monthly interests). Sub-section\\n(1) of section 6 of the Act 1993, permitted the supplier to recover such interest amount by way of a\\nsuit or other proceedings under law. Sub-section (2) of section 6 permitted any party to dispute to\\nmake a reference to Industrial Facilitation Council as constituted under section of the Act seeking\\narbitration or conciliation. Section 7 of the Act of 1993 pertained to requirement of pre-deposit in\\ncase of any appeal against decree, award or other order. Section 7 of the Act of 1993 reads as under :\\n\"7.Jmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 8Appeal - No appeal against any decree, award or other order shall be entertained by any Court or\\nother authority unless the appellant (not being a supplier) has deposited with its seventy-five per\\ncent of the amount in terms of the decree, award or, as the case may be, other order in the manner\\ndirected by such Court or, as the case may be, such authority.\"\\n10. The Act of 2006 was enacted \"to provide for facilitating the promotion and development and\\nenhancing the competitiveness of micro, small and medium enterprises and for matters connected\\ntherewith or incidental thereto\". In the statement of objects and reasons, it is recorded that -\\n\"The world over, the emphasis has now been shifted from \"industries\" to \"enterprises\". Added to\\nthis, a growing need is being felt to extend policy support for the small enterprises so that they are\\nenabled to grow into medium ones, adopt better and higher levels of technology and achieve higher\\nproductivity to remain competitive in a fast globalisation area. Thus, as in most developed and many\\ndeveloping countries, it is necessary that in India too, the concerns of the entire small and medium\\nenterprises sector are addressed and the sector is provided with a single legal framework. As of now,\\nthe medium industry or enterprise is ot even defined in any law.\"\\nThe Bill was, therefore, introduced aiming at facilitating the promotion and development and\\nenhancing the competitiveness of small and medium enterprises seeking to, besides others, the\\nfollowing :-\\n(f) make provisions for ensuring timely and smooth flow of credit to small and medium enterprises\\nto minimise the incidence of sickness among and enhancing the competitiveness of such enterprises,\\nin accordance with the guidelines or instructions of the Reserve Bank of India;\\n.....\\n.....\\n(k) make further improvements in the Interest on Delayed Payments to Small Scale and Ancillary\\nIndustrial Undertakings Act, 1993 and making that enactment a part of the proposed legislation and\\nto repeal that enactment.\"\\nTerms \"micro enterprise\", \"small enterprise\" and \"supplier\" have been defined in section 2(h), (m)\\nand\\n(n) respectively in following manner :-\\n\"(h) \\'micro enterprise\\' means an enterprise classified as such under sub-clause (i) of clause (a) or\\nsub-clause (i) of clause (b) of sub-section (1) of section 7;\"\\n.....Jmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 9\"(m) \\'small enterprise\\' means an enterprise classified as such under sub-clause (ii) of clause (a) or\\nsub-clause(ii) of clause (b) of sub-section (1) of section 7;\\n(n) \\'supplier\\' means a micro or small enterprise, which has filed a memorandum with the authority\\nreferred to in sub-section (1) of section 8, and includes--\\n(i) the National Small Industries Corporation, being a company, registered under the Companies\\nAct, 1956 (1 of 1956);\\n(ii) the Small Industries Development Corporation of a State or a Union territory, by whatever name\\ncalled, being a company registered under the Companies Act, 1956 (1 of 1956);\\n(iii)any company, co-operative society, trust or a body, by whatever name called, registered or\\nconstituted under any law for the time being in force and engaged in selling goods produced by\\nmicro or small enterprises and rendering services which are provided by such enterprises;\"\\nChapter V of the Act of 2006 deals with delayed payments to micro and small enterprises. Section 15\\nof the Act of 2006 casts a liability on the buyer to make payment to the supplier of goods or services\\nwithin the stipulated time. Section 16 of the Act of 2006 casts a duty on the buyer to pay compound\\ninterest at three times of the bank rate notified by the Reserve Bank, if such payment is not made\\nwithin the time stipulated notwithstanding any agreement or law for the time being in force. Section\\n18 of the Act of 2006 provides for reference to Micro and Small Enterprises Facilitation Council\\nestablished under section 20 of the Act. Section 19 of the Act of 2006 requires deposit of 75% of the\\namount of decree, award or order pending the proceedings challenging such decree, award or order.\\nSection 18 and 19 of the Act of 2006 read as under:\\n\"18.\\nReference to Micro and Small Enterprises Facilitation Council - (1) Notwithstanding anything\\ncontained in any other law for the time being in force, any party to a dispute may, with regard to any\\namount due under section 17, make a reference to the Micro and Small Enterprises Facilitation\\nCouncil.\\n(2)\\nOn receipt of a reference under sub-section (1), the Council shall either itself conduct conciliation in\\nthe matter or seek the assistance of any institution or centre providing alternate dispute resolution\\nservices by making a reference to such an institution or centre, for conducting conciliation and the\\nprovisions of sections 65 to 81 of the Arbitration and Conciliation Act, 1996 (26 of 1996) and shall\\napply to such a dispute as if the conciliation was initiated under Part III of that Act.\\n(3)Jmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 10Where the conciliation initiated under sub-section (2) is not successful land stands terminated\\nwithout any settlement between the parties, the Council shall either itself take up the dispute for\\narbitration or refer to it any institution or centre providing alternate dispute resolution services for\\nsuch arbitration and the provisions of the Arbitration and Conciliation Act, 1996 (26 of 1996) shall\\nthen apply to the dispute as if the arbitration was in pursuance of an arbitration agreement referred\\nto in sub-section (1) of section 7 of that Act.\\n(4) Notwithstanding anything contained in any other law for the time being in force, the Micro and\\nSmall Enterprises Facilitation Council or the centre providing alternate dispute resolution services\\nshall have jurisdiction to act as an Arbitrator or Conciliator under this section in a dispute between\\nthe supplier located within its jurisdiction and a buyer located anywhere in India.\\n(5)\\nEvery reference made under this section shall be decided within a period of ninety days from the\\ndate of making such a reference.\\n19. Application for setting aside decree, award or order - No application for setting aside any decree,\\naward or other order made either by the Council itself or by any institution or centre providing\\nalternate dispute resolution services to which a reference is made by the Council, shall be\\nentertained by any court unless the appellant (not being the supplier) has deposited with it seventy\\nfive per cent of the amount in terms of the decree, award, or as the case may be, the other order in\\nthe manner directed by such court:\\nProvided that pending disposal of the application to set aside the decree, award or order, the court\\nshall order that such percentage of the amount deposited shall be paid to the supplier, as it\\nconsiders reasonable under the circumstances of the case subject to such conditions as it deems\\nnecessary to impose.\"\\nSection 23 of the Act of 2006 provides that the amount of interest payable or paid by any buyer\\nunder the provisions of the Act of 2006 shall not be admissible for deduction from the computation\\nof income under the Income Tax Act, 1961. Section 24 of the Act of 2006, provides that the\\nprovisions of sections 15 to 23 shall have effect notwithstanding anything inconsistent in any other\\nlaw for the time being in force. Under section 32 of the Act of 2006, the Act of 1993 came to be\\nrepealed.\\n11. Above statutory provisions are required to be interpreted in the background of the facts on hand.\\nWhile I attempt to do so, I find it necessary to refer to the decision of the Apex Court in the case of\\nSnehadeep Structures Pvt. Ltd. (supra). The said case arose under the Act of 1993. The appellant\\nCompany before the Supreme Court was a small scale industrial undertaking. Disputes between the\\nappellant and the respondent were referred to an Arbitrator. Retired Judge of the Bombay High\\nCourt acted as the Sole Arbitrator and rendered his award directing the respondent Corporation to\\npay a sum of Rs.78,19,540.73 to the appellant Company. Such award was challenged by the\\nrespondent Corporation before the Bombay High Court by filing an application under section 34 ofJmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 11the Arbitration and Conciliation Act. In such proceedings, the appellant company resorted to section\\n7 of the Act of 1993 and insisted that the Corporation must deposit 75% of the amount awarded in\\nthe award. Single Judge of the Bombay High Court dismissed the application under section 34 of the\\nArbitration and Conciliation Act holding that section 7 of the Act of 1993 would apply. Division\\nBench of the Bombay High Court relying upon the word \\'appeal\\' used in section 7 of the Act of 1993\\nupheld the contention of the Corporation that application under section 34 of the Arbitration and\\nConciliation Act would not come within the purview of such expression. As a passing reference, it\\nappears that the Bench also opined that the provisions of section 19 of the Act of 2006 would not\\napply since the said Act was promulgated in the year 2006 i.e. after the Single Judge heard the\\nchallenge in terms of section 7 of the Act of 1993. It was in this background that the Apex Court\\nconsidered the following question :\\n\"Whether the expression \\'appeal\\' used in Section 7 of the Interest Act includes an application to set\\naside the arbitral award filed under Section 34 of the Arbitration Act, 1996 ?\"\\nThe Apex Court in this connection held and observed as under :\\n\"42.\\nFurther, if the word \\'appeal\\' is not construed as including an application under Section 34 of the\\nArbitration Act, we are afraid that it would render the term \\'award\\' redundant and the requirement\\nof pre-deposit a total nullity with respect to all cases where a small scale industry undertaking\\npreferred arbitral proceedings, prior to the incorporation of the reference procedure in 1998.\\nArbitration necessarily has to result in an award. The only way of challenging an award in a court, in\\naccordance with Section 5 read with the opening clause of Section 34, is by filing an application\\nunder the latter section. If such challenge is not construed as an \\'appeal\\', the requirement of\\npre-deposit of interest before the buyer challenging an award passed against him, becomes a total\\nnullity. The fact that an order passed on such application/challenge under Section 34 is appealable\\nunder Section 37 is of no consequence. As the learned counsel for the appellant company rightly\\nargued, such appeal is filed against an order passed by the court under Section 34, not against an\\naward passed against the buyer and in favour of the small scale industry undertaking. In all cases\\nwhere the small scale industry undertaking enters into arbitration proceedings to obtain payment of\\ninterest, if we limit the requirement of pre-deposit to appeal under Section 37, therefore, we will be\\nrendering the term \\'award\\' a nullity, which we are not empowered to do. The requirement of\\npre-deposit of interest is introduced as a disincentive to prevent dilatory tactics employed by the\\nbuyers against whom the small scale industry might have procured an award, just as in cases of a\\ndecree or order. Presumably, the legislative intent behind Section 7 was to target buyers, who, only\\nwith the end of pushing off the ultimate event of payment to the small scale industry undertaking,\\ninstitute challenges against the award/decree/order passed against them. Such buyers cannot be\\nallowed to challenge arbitral awards indiscriminately, especially when the section requires\\npre-deposit of 75% interest even when appeal is preferred against an award, as distinguished from\\nan order or decree.\"\\n(emphasize supplied).Jmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 12Referring to section 19 of the Act of 2006, the Apex Court observed as under :\\n\"55. The provision, no doubt, requires the deposit to be made before an application under Section 34\\nof the Arbitration Act is filed. However, we are not inclined to read this provision of a subsequent\\nlegislation into the provision in question. While the learned counsel for the appellant company\\nurged that the legislature had used the terms \\'appeal\\' and \\'application\\' interchangeably, we are of\\nthe view that we cannot conclusively infer the same. Use of the terms \\'application\\' appears to be in\\nthe context of the dispute resolution mechanism provided for under Section 17(sic.SEction18) which\\nessentially comprises of conciliation and arbitration, to be governed by the Arbitration Act, 1996.\\nThe legislature has intended to bring about improvements to the Interest Act as stated in the\\nstatement of Objects and Reasons of the Act of 2006. Indeed, it might have contemplated a change\\nin the legal position while enacting the Act of 2006, but we cannot make that change apply\\nretrospectively. In this respect, we agree with the reasoning of the High Court and with the\\ncontentions of learned counsel for the respondents as we cannot read the provision of a subsequent\\nenactment into an Act which was repealed by the former.\"\\n12. From the above discussion, it can be seen that in the case of Snehadeep Structures Pvt. Ltd.\\n(supra), the Apex Court was not directly dealing with the applicability of section 19 of the Act of\\n2006 and the case was arising only under section 7 of the Act of 1993. However, certain observations\\nmade by the Apex Court in the said judgment would be useful for addressing the present controversy\\nalso.\\n13. As already noted, the Act of 2006 aims at providing further improvements in the Act of 1993.\\nWith that aim in mind, the entire Chapter V containing provisions of section 15 to 25 have been\\nmade in the Act of 2006 and resultantly, the Act of 1993 has been repealed. Such provisions when\\nperused would manifest the legislative intent of ensuring prompt payments to micro and small\\nindustries from the buyers who have been supplied the goods or rendered services. Provisions\\ncontained include setting out time limit for making such payments, payment of compound interest\\nat a specified rate if such time limit is not adhered to. To discourage withholding of such payments\\nand to make it less attractive, interest on such delayed payment is not made deductible from the\\ncomputation of income under the Income Tax Act, 1961.\\n14. Section 18 of the Act of 2006, as can be seen from the perusal of the same, provides for\\nresolution of dispute regarding such payments by Micro and Small Enterprises Facilitation Council.\\nThe Council is authorized to conduct conciliation itself or refer the same to any center providing for\\nalternate dispute resolution services. Council also is authorized to arbitrate and render its award. It\\nis true, as pointed by the counsel for the petitioners, that section 19 of the Act providing for\\npre-deposit immediately succeeds section 18 of the Act of 2006 which principally provides for\\nconciliation or arbitration by the Micro and Small Industries Facilitation Council or any institution\\nor center providing alternate dispute resolution to which reference may be made by the Council.\\nHowever, plain language of section 19 would not permit restriction of its applicability only in case of\\naward envisaged under section 18 of the Act. Section 19 in clear terms provides that no application\\nfor setting aside any decree, award or other order made either by Council or by any institution or\\ncenter providing alternate dispute resolution services to which reference has been made by theJmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 13Council shall be entertained without deposit of 75% of the amount in terms of decree, award or\\norder.\\n15. I am unable to uphold the contention of the Counsel for the petitioners that section 19 would\\napply only in case of award passed by the Council or any institute or center to which reference is\\nmade by the Council. If such an interpretation is accepted, the term decree in section 19 would be\\nrendered redundant since neither the Council nor any institution or center to which reference would\\nbe made by the Council would be passing a decree. As already noted, section 18 pertains to\\nprocedure for conciliation or arbitration to be undertaken either by the Council or by any center or\\ninstitution to which reference may be made by the Council.\\n16. In the case of Snehadeep Structures Pvt. Ltd. (supra), the Apex Court interpreted the term\\n\\'appeal\\' used in section 7 of the Act of 1993 to include even an application for setting aside an\\narbitral award under section 34 of the Arbitration and Conciliation Act observing that legislative\\nintent behind section 7 was to target buyers, who, not only with the end of pushing off the ultimate\\nevent of payment to the small scale industry undertaking, institute challenges against the\\naward/decree/order/ passed against them and such buyers cannot be allowed to challenge arbitral\\nawards indiscriminately, especially when the section requires pre-deposit of 75% interest even when\\nthe appeal is preferred against an award, as distinguished from an order or decree.\\n17. It may be recalled that besides other objects, the Act of 2006 was enacted to make further\\nimprovements in the Act of 1993. Keeping this view in mind, as noted earlier, provisions contained\\nin section Chapter V have been made in the Act of 2006 to provide for detailed machinery to ensure\\nspeedy recovery of dues of suppliers of goods or services which are micro or small enterprises. Such\\nlegislative intent cannot be thwarted by reading section 19 of the Act of 2006 as to apply only in case\\nof challenge to award or order passed either by the Council itself or by the institution or center to\\nwhich reference was made by the Council. In my opinion, section 19 would apply in all cases where\\nbuyer is facing order for payment made in favour of supplier of goods or provider of services which\\nis a micro or small enterprise when an application is made challenging such decree, award or order.\\n18. In the result, the petition fails and is dismissed. However, time for depositing the amount as per\\nthe impugned order shall stand extended till 31st January 2011. Notice is discharged. Interim relief\\nis vacated.\\n(Akil Kureshi, J.) (vjn) Â Â Â  TopJmc vs Mechtech on 10 January, 2011\\nIndian Kanoon - http://indiankanoon.org/doc/1709206/ 14'"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "corpus_texts[0]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7c125074",
+   "metadata": {},
+   "source": [
+    "## IV.  Tokenization and Optional Stemming"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "f31f44ee",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "nltk.data.path.append('/Users/maniveena/nltk_data') \n",
+    "# path to find the 'punkt' , 'stop words' libraries for tokenizing and stopword removal respectively"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8ddab42a",
+   "metadata": {},
+   "source": [
+    "##### Tesing the tokenizer and stopwords"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "1d7cad2f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "['Hello', 'world', '!']\n",
+      "\n",
+      "\n",
+      "['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', \"you're\"]\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(word_tokenize(\"Hello world!\"))\n",
+    "print('\\n')\n",
+    "print(stopwords.words('english')[:10])  # Print first 10 English stopwords"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "7b8b041a",
+   "metadata": {},
+   "source": [
+    "### IV.A. Creating function for tokenizing and optional stemming :\n",
+    "\n",
+    "`tokenize_and_stem()`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 33,
+   "id": "55c2cdfd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def tokenize_and_stem(text, use_stemming=True):\n",
+    "    stemmer = PorterStemmer()\n",
+    "    tokens = word_tokenize(text)\n",
+    "    # Keep alphabetic and alphanumeric tokens for case IDs and judgement numbers etc.\n",
+    "    tokens = [t.lower() for t in tokens if t.isalpha() or t.isalnum()]  \n",
+    "    tokens = [t for t in tokens if t not in stopwords.words('english')]  # Remove stopwords\n",
+    "    if use_stemming:\n",
+    "        tokens = [stemmer.stem(t) for t in tokens]\n",
+    "    return tokens"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c1d78aeb",
+   "metadata": {},
+   "source": [
+    "# Part B-\n",
+    "## a) Python function that constructs an inverted index `build_inverted_index`"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "d0a750cd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def build_inverted_index(corpus, use_stemming=True):\n",
+    "    inverted_index = {}\n",
+    "    for doc_id, document in enumerate(corpus):\n",
+    "        for term in tokenize_and_stem(document, use_stemming):\n",
+    "            if term not in inverted_index:\n",
+    "                inverted_index[term] = set()\n",
+    "            inverted_index[term].add(doc_id)\n",
+    "    return inverted_index\n",
+    "\n",
+    "# Assuming corpus_texts is a list of text from your PDFs\n",
+    "inverted_index_with_stemming = build_inverted_index(corpus_texts, use_stemming=True)\n",
+    "inverted_index_without_stemming= build_inverted_index(corpus_texts, use_stemming=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "0e7dc3aa",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Inverted index length with stemming: 8246\n",
+      "Inverted index length without stemming: 10870\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"Inverted index length with stemming:\", len(inverted_index_with_stemming))\n",
+    "print(\"Inverted index length without stemming:\",len(inverted_index_without_stemming))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "24aed765",
+   "metadata": {},
+   "source": [
+    "#### Validating the function-\n",
+    "\n",
+    "- The difference in lengths between the inverted indexes with and without stemming (8246 vs. 10870) is expected, as stemming consolidates similar words into a single term, resulting in fewer unique terms."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f914ca6c",
+   "metadata": {},
+   "source": [
+    "### Step-2: Define Boolean Query Functions\n",
+    "\n",
+    "- Simple functions for doing AND/OR operations on the queries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "cc436899",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Defining test queries\n",
+    "test_queries = [\n",
+    "    \"Arbitration\",\n",
+    "    \"appellants\",\n",
+    "    \"provisions\",\n",
+    "    \"MSMED\",\n",
+    "    \"Supreme Court\",\n",
+    "    \"writ petition\",\n",
+    "    \"claim petition\",\n",
+    "    \"provisions of the\",\n",
+    "    \"MSMED Act\",\n",
+    "    \"Arbitration AND MSMED\",\n",
+    "    \"appellants OR Supreme Court\",\n",
+    "    \"writ petition AND claim petition\",\n",
+    "]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "29d4a3d9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def boolean_and(query_terms, inverted_index):\n",
+    "    # Retrieve sets of documents for each query term\n",
+    "    sets = [inverted_index.get(term, set()) for term in query_terms]\n",
+    "    # Return the intersection of these sets\n",
+    "    return set.intersection(*sets) if sets else set()\n",
+    "\n",
+    "def boolean_or(query_terms, inverted_index):\n",
+    "    # Retrieve sets of documents for each query term\n",
+    "    sets = [inverted_index.get(term, set()) for term in query_terms]\n",
+    "    # Return the union of these sets\n",
+    "    return set.union(*sets) if sets else set()\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9168a973",
+   "metadata": {},
+   "source": [
+    "### Step-3 : Simple queries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "1238ca9d",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Query: 'Arbitration'\n",
+      "Documents retrieved with stemming: 31\n",
+      "Documents retrieved without stemming: 31\n",
+      "---------------------------------------------------\n",
+      "Query: 'appellants'\n",
+      "Documents retrieved with stemming: 30\n",
+      "Documents retrieved without stemming: 9\n",
+      "---------------------------------------------------\n",
+      "Query: 'provisions'\n",
+      "Documents retrieved with stemming: 36\n",
+      "Documents retrieved without stemming: 36\n",
+      "---------------------------------------------------\n",
+      "Query: 'MSMED'\n",
+      "Documents retrieved with stemming: 10\n",
+      "Documents retrieved without stemming: 10\n",
+      "---------------------------------------------------\n",
+      "Query: 'Supreme Court'\n",
+      "Documents retrieved with stemming: 33\n",
+      "Documents retrieved without stemming: 33\n",
+      "---------------------------------------------------\n",
+      "Query: 'writ petition'\n",
+      "Documents retrieved with stemming: 28\n",
+      "Documents retrieved without stemming: 26\n",
+      "---------------------------------------------------\n",
+      "Query: 'claim petition'\n",
+      "Documents retrieved with stemming: 28\n",
+      "Documents retrieved without stemming: 22\n",
+      "---------------------------------------------------\n",
+      "Query: 'provisions of the'\n",
+      "Documents retrieved with stemming: 36\n",
+      "Documents retrieved without stemming: 36\n",
+      "---------------------------------------------------\n",
+      "Query: 'MSMED Act'\n",
+      "Documents retrieved with stemming: 10\n",
+      "Documents retrieved without stemming: 10\n",
+      "---------------------------------------------------\n",
+      "Query: 'Arbitration AND MSMED'\n",
+      "Documents retrieved with stemming: 10\n",
+      "Documents retrieved without stemming: 10\n",
+      "---------------------------------------------------\n",
+      "Query: 'appellants OR Supreme Court'\n",
+      "Documents retrieved with stemming: 27\n",
+      "Documents retrieved without stemming: 9\n",
+      "---------------------------------------------------\n",
+      "Query: 'writ petition AND claim petition'\n",
+      "Documents retrieved with stemming: 23\n",
+      "Documents retrieved without stemming: 18\n",
+      "---------------------------------------------------\n"
+     ]
+    }
+   ],
+   "source": [
+    "def process_query(query, inverted_index, use_stemming=True):\n",
+    "    query_terms = tokenize_and_stem(query, use_stemming)\n",
+    "    # Assuming simple queries that can be handled with 'boolean_and'\n",
+    "    # For more complex queries, you'll need additional parsing\n",
+    "    return boolean_and(query_terms, inverted_index)\n",
+    "\n",
+    "\n",
+    "# Process each query and display results\n",
+    "for query in test_queries:\n",
+    "    docs_with_stemming = process_query(query, inverted_index_with_stemming)\n",
+    "    docs_without_stemming = process_query(query, inverted_index_without_stemming, use_stemming=False)\n",
+    "\n",
+    "    print(f\"Query: '{query}'\")\n",
+    "    print(f\"Documents retrieved with stemming: {len(docs_with_stemming)}\")\n",
+    "    print(f\"Documents retrieved without stemming: {len(docs_without_stemming)}\")\n",
+    "    print(\"---------------------------------------------------\")\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "947952d7",
+   "metadata": {},
+   "source": [
+    "## Observations:\n",
+    "\n",
+    "##### 1. Consistency for Single Terms and Phrases:\n",
+    "\n",
+    "- For single-word queries (`Arbitration`, `provisions`, `MSMED`) and some phrases (`Supreme Court`, `MSMED Act`), the number of documents retrieved is the same for both stemmed and non-stemmed indexes. This suggests that stemming is not altering the retrieval for these specific terms and phrases much. This maybe because they don't have many variations that stemming would consolidate.\n",
+    "\n",
+    "##### 2. Significant Difference for Certain Terms:\n",
+    "\n",
+    "- For the term \"appellants,\" there's a notable difference (`30 with stemming` vs. `9 without stemming`). This indicates that stemming consolidates various forms of the word \"appellant\" (like `appellant's`, `appellants'`) into a single term, leading to more documents being retrieved.\n",
+    "\n",
+    "##### 3. Impact on Phrases:\n",
+    "\n",
+    "- For phrases like `writ petition` and `claim petition`, the stemmed index retrieves more documents. This could be because the stemming process reduces the words in these phrases to their root forms, possibly matching more documents where variations of these words are used.\n",
+    "\n",
+    "##### 4. Complex Queries:\n",
+    "\n",
+    "- For complex queries involving AND/OR operations, there are differences in the number of documents retrieved. This is particularly evident in the query `appellants OR Supreme Court` (`27 with stemming` vs. `9 without stemming`). The stemming is clearly improving the matches for such queries.\n",
+    "\n",
+    "##### 5. Overall Effectiveness:\n",
+    "\n",
+    "- Stemming seems to increase the number of documents retrieved for queries involving words with multiple forms. This can be beneficial for ensuring comprehensive retrieval but might also include more loosely related documents, potentially affecting precision."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a0a5b307",
+   "metadata": {},
+   "source": [
+    "### Step-4: Complex Queries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 65,
+   "id": "7962384d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def process_and_subquery(subquery, inverted_index, use_stemming=True):\n",
+    "    query_terms = tokenize_and_stem(subquery, use_stemming)\n",
+    "    return boolean_and(query_terms, inverted_index)\n",
+    "\n",
+    "def process_or_subquery(subquery, inverted_index, use_stemming=True):\n",
+    "    and_parts = subquery.split(\"and\")\n",
+    "    and_results = [process_and_subquery(part.strip(), inverted_index, use_stemming) for part in and_parts]\n",
+    "    return set.intersection(*and_results) if and_results else set()\n",
+    "\n",
+    "def process_complex_query(query, inverted_index, use_stemming=True):\n",
+    "    or_parts = query.split(\"or\")\n",
+    "    or_results = [process_or_subquery(part.strip(), inverted_index, use_stemming) for part in or_parts]\n",
+    "    return set.union(*or_results) if or_results else set()\n",
+    "\n",
+    "# Test queries\n",
+    "complex_queries = [\n",
+    "    \"(Notwithstanding OR arguments) OR adjudicate\",\n",
+    "    \"(writ petition OR claim petition or incumbent\",\n",
+    "    \"(Arbitration AND Conciliation) AND consent\",\n",
+    "    \"(MSMED Act OR Arbitration act) AND adjudicate\"\n",
+    "]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 67,
+   "id": "be174968",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Query: '(Notwithstanding OR arguments) OR adjudicate'\n",
+      "Documents retrieved with stemming: 0\n",
+      "Documents retrieved without stemming: 0\n",
+      "---------------------------------------------------\n",
+      "Query: '(writ petition OR claim petition or incumbent'\n",
+      "Documents retrieved with stemming: 24\n",
+      "Documents retrieved without stemming: 19\n",
+      "---------------------------------------------------\n",
+      "Query: '(Arbitration AND Conciliation) AND consent'\n",
+      "Documents retrieved with stemming: 5\n",
+      "Documents retrieved without stemming: 5\n",
+      "---------------------------------------------------\n",
+      "Query: '(MSMED Act OR Arbitration act) AND adjudicate'\n",
+      "Documents retrieved with stemming: 5\n",
+      "Documents retrieved without stemming: 1\n",
+      "---------------------------------------------------\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Process each complex query and display results\n",
+    "for query in complex_queries:\n",
+    "    docs_with_stemming = process_complex_query(query, inverted_index_with_stemming)\n",
+    "    docs_without_stemming = process_complex_query(query, inverted_index_without_stemming, use_stemming=False)\n",
+    "\n",
+    "    print(f\"Query: '{query}'\")\n",
+    "    print(f\"Documents retrieved with stemming: {len(docs_with_stemming)}\")\n",
+    "    print(f\"Documents retrieved without stemming: {len(docs_without_stemming)}\")\n",
+    "    print(\"---------------------------------------------------\")\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "74ace9f7",
+   "metadata": {},
+   "source": [
+    "#### Observations:\n",
+    "\n",
+    "- We observe that stemming has shown better results with complex queries as well."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5a85d010",
+   "metadata": {},
+   "source": [
+    "---------------------------------------------------------------------------------------------------------------"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "c6c56bf7",
+   "metadata": {},
+   "source": [
+    "# b) Potential challenges and considerations unique to the `Legal` domain"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b699e775",
+   "metadata": {},
+   "source": [
+    "### 1. <u>Complex and Specialized Vocabulary:</u>\n",
+    "\n",
+    "- Legal documents often contain specialized terminology and jargon that may not be common in general language. This can pose challenges in accurately indexing and retrieving relevant documents. \n",
+    "\n",
+    "    - ex: `adjudicate`, `Appellate Authority`, `deposition`, `non-obstante clause` etc.\n",
+    "--------------------------------------------------------------------------------------------------------------\n",
+    "### 2. <u>Long and Complex Sentences: </u>\n",
+    "- Legal judgments are known for long, complex sentence structures, which can complicate the process of tokenization and accurate term extraction.\n",
+    "\n",
+    "    - ex: this is a line in a particular judgement given-\n",
+    "    \n",
+    "    `These civil revision petitions are filed seeking to assail the order dated 08-06-2007 in I.A. No. 121\n",
+    "    of 2007 in O.P. No. 1630 of 2003 and batch, on the file of the XIV Additional Chief Judge, Fast\n",
+    "    Track Court, City Civil Court, Hyderabad, wherein the said petitions filed by the petitioners herein\n",
+    "    under Order XIV Rule 2 C.P.C., read with Section 19 of the Mirco, Small and Medium Enterprises\n",
+    "    Development Act, 2006, (Central Act 27 of 2006)(for short 'the New Act'), praying to decide the\n",
+    "    preliminary objection regarding the maintainability of the original petitions without deposit of 75%\n",
+    "    of the awarded amount, were dismissed.`\n",
+    "--------------------------------------------------------------------------------------------------------------\n",
+    "\n",
+    "### 3.  <u> Document Length and Structure: </u>\n",
+    "- Legal documents are often lengthy and have a structured format (sections, clauses, appendices), which might require a more sophisticated approach to indexing.\n",
+    "\n",
+    "ex: latest supreme court judgement on Article 370 is 476 pages in length: \n",
+    "\n",
+    "https://main.sci.gov.in/pdf/LU/article_370.pdf\n",
+    "\n",
+    "\n",
+    "--------------------------------------------------------------------------------------------------------------\n",
+    "\n",
+    "### 4. <u> Need for High Precision and Recall: </u>\n",
+    "\n",
+    "- In legal research, both high precision (retrieving mostly relevant documents) and high recall (retrieving all relevant documents) are crucial. This often complicates retrieval process.\n",
+    "\n",
+    "--------------------------------------------------------------------------------------------------------------\n",
+    "\n",
+    "### 5. <u> Handling Precedents and Citations:</u> \n",
+    "\n",
+    "- Legal judgments often reference other judgments or legal texts. Capturing these relationships can be challenging but is crucial for comprehensive information retrieval.\n",
+    "\n",
+    "\n",
+    "\n",
+    "### <u>P.S:</u> All the examples quoted above, except for point 3. are from the corpus of documents we considered for this assignment."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "022df6ed",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
